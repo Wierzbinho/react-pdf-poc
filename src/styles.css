@@ -174,3 +174,72 @@ body {
   color: #101014;
   border-color: #48ef92;
 }
+
+.pdf-layout {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.pdf-thumbnails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 200px;
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  position: sticky;
+  top: 1.5rem;
+}
+
+.pdf-thumbnails::-webkit-scrollbar {
+  width: 6px;
+}
+
+.pdf-thumbnails::-webkit-scrollbar-thumb {
+  background: #2f3948;
+  border-radius: 999px;
+}
+
+.pdf-thumbnails::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.pdf-thumbnail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  background: #11151c;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  color: inherit;
+  outline: none;
+  font: inherit;
+}
+
+.pdf-thumbnail:hover,
+.pdf-thumbnail:focus-visible {
+  border-color: #3b4152;
+  outline: none;
+}
+
+.pdf-thumbnail--active {
+  border-color: #3ddc84;
+  background: #1a2b1f;
+}
+
+.pdf-thumbnail canvas {
+  width: 100%;
+  height: auto !important;
+  border-radius: 8px;
+}
+
+.pdf-thumbnail__label {
+  font-size: 0.75rem;
+  text-align: center;
+  color: #aebad6;
+}

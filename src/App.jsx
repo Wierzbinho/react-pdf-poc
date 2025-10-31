@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
+import { Document, Page, pdfjs, Thumbnail } from 'react-pdf';
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import Toolbar from './components/Toolbar.jsx';
 
@@ -8,6 +8,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 const SAMPLE_PDF_URL =
   'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf';
 const BASE_PAGE_WIDTH = 780;
+const THUMBNAIL_WIDTH = 180;
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 2.5;
 const ZOOM_STEP = 0.25;
@@ -327,25 +328,54 @@ export default function App() {
         onPrint={handlePrintDocument}
       />
       <Document file={SAMPLE_PDF_URL} onLoadSuccess={handleDocumentLoad}>
-        {Array.from({ length: numPages ?? 0 }, (_, index) => (
-          <div
-            className="pdf-page"
-            key={`page_${index + 1}`}
-            data-page={index + 1}
-            ref={(element) => {
-              pageRefs.current[index] = element ?? null;
-            }}
-          >
-            <Page
-              className="pdf-page-content"
-              pageNumber={index + 1}
-              width={BASE_PAGE_WIDTH * zoom}
-              renderTextLayer={false}
-              renderAnnotationLayer={false}
-              rotate={rotation}
-            />
-          </div>
-        ))}
+        <div className="pdf-layout">
+          <aside className="pdf-thumbnails" aria-label="Page thumbnails">
+            {Array.from({ length: numPages ?? 0 }, (_, index) => {
+              const pageNumber = index + 1;
+              const isActive = currentPage === pageNumber;
+
+              return (
+                <div
+                  key={`thumb_${pageNumber}`}
+                  className={`pdf-thumbnail${isActive ? ' pdf-thumbnail--active' : ''}`}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  <Thumbnail
+                    pageNumber={pageNumber}
+                    width={THUMBNAIL_WIDTH * zoom}
+                    renderTextLayer={false}
+                    renderAnnotationLayer={false}
+                    rotate={rotation}
+                    onItemClick={({ pageNumber: targetPage }) => goToPage(targetPage)}
+                  />
+                  <span className="pdf-thumbnail__label">Page {pageNumber}</span>
+                </div>
+              );
+            })}
+          </aside>
+
+          <section className="pdf-pages" aria-label="Document pages">
+            {Array.from({ length: numPages ?? 0 }, (_, index) => (
+              <div
+                className="pdf-page"
+                key={`page_${index + 1}`}
+                data-page={index + 1}
+                ref={(element) => {
+                  pageRefs.current[index] = element ?? null;
+                }}
+              >
+                <Page
+                  className="pdf-page-content"
+                  pageNumber={index + 1}
+                  width={BASE_PAGE_WIDTH * zoom}
+                  renderTextLayer={false}
+                  renderAnnotationLayer={false}
+                  rotate={rotation}
+                />
+              </div>
+            ))}
+          </section>
+        </div>
       </Document>
     </main>
   );
