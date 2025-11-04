@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import { Document, Page, pdfjs, Thumbnail } from 'react-pdf';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Document, Page, Thumbnail, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import Toolbar from './components/Toolbar.jsx';
 
@@ -14,17 +16,40 @@ const MAX_ZOOM = 2.5;
 const ZOOM_STEP = 0.25;
 const ROTATION_STEP = 90;
 
+const escapeHtml = (value) =>
+  value.replace(/[&<>]/g, (char) => {
+    if (char === '&') {
+      return '&amp;';
+    }
+    if (char === '<') {
+      return '&lt;';
+    }
+    if (char === '>') {
+      return '&gt;';
+    }
+    return char;
+  });
+
 export default function App() {
   const [numPages, setNumPages] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageInput, setPageInput] = useState('1');
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
+  const [pdfDocument, setPdfDocument] = useState(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchMatchesByPage, setSearchMatchesByPage] = useState(() => new Map());
+  const [activeMatchIndex, setActiveMatchIndex] = useState(0);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState(null);
   const pageRefs = useRef([]);
   const isPrintingRef = useRef(false);
   const isDownloadingRef = useRef(false);
   const autoScrollTargetRef = useRef(null);
   const autoScrollTimeoutRef = useRef(null);
+  const searchInputRef = useRef(null);
 
   const scrollToPage = (pageNumber) => {
     const target = pageRefs.current[pageNumber - 1];
@@ -54,7 +79,9 @@ export default function App() {
     }
   };
 
-  const handleDocumentLoad = ({ numPages: nextNumPages }) => {
+  const handleDocumentLoad = (documentProxy) => {
+    const nextNumPages = documentProxy.numPages;
+    setPdfDocument(documentProxy);
     pageRefs.current = new Array(nextNumPages).fill(null);
     setNumPages(nextNumPages);
     setCurrentPage(1);
@@ -301,6 +328,179 @@ export default function App() {
     return () => observer.disconnect();
   }, [numPages, currentPage]);
 
+  const handleSearchSubmit = async (event) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+
+    if (!pdfDocument || !numPages || !query) {
+      setSearchResults([]);
+      setSearchMatchesByPage(new Map());
+      setActiveMatchIndex(0);
+      setSearchError(null);
+      return;
+    }
+
+    setIsSearching(true);
+    setSearchError(null);
+
+    try {
+      const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const matchesByPage = new Map();
+      const results = [];
+
+      for (let pageIndex = 0; pageIndex < numPages; pageIndex += 1) {
+        const pageNumber = pageIndex + 1;
+        const page = await pdfDocument.getPage(pageNumber);
+        const textContent = await page.getTextContent({ disableCombineTextItems: true });
+        const itemMatchesMap = new Map();
+
+        textContent.items.forEach((item, itemIndex) => {
+          const text = item?.str ?? '';
+          if (!text) {
+            return;
+          }
+
+          const regex = new RegExp(escaped, 'gi');
+          const matchesForItem = [];
+          let match;
+
+          while ((match = regex.exec(text)) !== null) {
+            const start = match.index;
+            const end = start + match[0].length;
+            const matchIndex = results.length;
+
+            results.push({ pageNumber, itemIndex, start, end });
+            matchesForItem.push({ matchIndex, start, end });
+          }
+
+          if (matchesForItem.length > 0) {
+            itemMatchesMap.set(itemIndex, matchesForItem);
+          }
+        });
+
+        if (itemMatchesMap.size > 0) {
+          matchesByPage.set(pageNumber, itemMatchesMap);
+        }
+      }
+
+      setSearchMatchesByPage(matchesByPage);
+      setSearchResults(results);
+      setActiveMatchIndex(0);
+      if (results.length > 0) {
+        goToPage(results[0].pageNumber);
+      }
+    } catch (error) {
+      console.error('Search failed', error);
+      setSearchError('Unable to search this document.');
+      setSearchMatchesByPage(new Map());
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setSearchResults([]);
+      setSearchMatchesByPage(new Map());
+      setActiveMatchIndex(0);
+      setSearchError(null);
+    }
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (searchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [searchOpen]);
+
+  useEffect(() => {
+    if (searchResults.length > 0) {
+      const index = Math.min(activeMatchIndex, searchResults.length - 1);
+      const target = searchResults[index];
+      if (target) {
+        goToPage(target.pageNumber);
+      }
+    }
+  }, [activeMatchIndex, searchResults]);
+
+  const handleSearchToggle = () => {
+    setSearchOpen((open) => {
+      if (open) {
+        setSearchQuery('');
+        setSearchResults([]);
+        setSearchMatchesByPage(new Map());
+        setActiveMatchIndex(0);
+        setSearchError(null);
+      }
+      return !open;
+    });
+  };
+
+  const handleSearchClose = () => {
+    setSearchOpen(false);
+    setSearchQuery('');
+    setSearchResults([]);
+    setSearchMatchesByPage(new Map());
+    setActiveMatchIndex(0);
+    setSearchError(null);
+  };
+
+  const handleSelectMatch = (direction) => {
+    const total = searchResults.length;
+    if (total === 0) {
+      return;
+    }
+
+    setActiveMatchIndex((prev) => {
+      const next = (prev + direction + total) % total;
+      goToPage(searchResults[next].pageNumber);
+      return next;
+    });
+  };
+
+  const textRenderersByPage = useMemo(() => {
+    if (searchResults.length === 0 || searchMatchesByPage.size === 0) {
+      return new Map();
+    }
+
+    const map = new Map();
+
+    searchMatchesByPage.forEach((itemMatchesMap, pageNumber) => {
+      map.set(pageNumber, ({ str, itemIndex }) => {
+        const source = typeof str === 'string' ? str : '';
+        const matches = itemMatchesMap.get(itemIndex);
+        if (!matches || matches.length === 0) {
+          return escapeHtml(source);
+        }
+
+        let cursor = 0;
+        let output = '';
+
+        matches.forEach(({ start, end, matchIndex }) => {
+          const safeStart = Math.max(start, 0);
+          const safeEnd = Math.max(end, safeStart);
+
+          if (safeStart > cursor) {
+            output += escapeHtml(source.slice(cursor, safeStart));
+          }
+
+          const segment = source.slice(safeStart, safeEnd);
+          const isActive = matchIndex === activeMatchIndex;
+          output += `<mark class="pdf-highlight${isActive ? ' pdf-highlight--active' : ''}">${escapeHtml(segment)}</mark>`;
+          cursor = safeEnd;
+        });
+
+        if (cursor < source.length) {
+          output += escapeHtml(source.slice(cursor));
+        }
+
+        return output;
+      });
+    });
+
+    return map;
+  }, [searchMatchesByPage, searchResults, activeMatchIndex]);
+
   return (
     <main className="pdf-viewer">
       <Toolbar
@@ -326,7 +526,42 @@ export default function App() {
         onRotateReset={handleRotateReset}
         onDownload={handleDownloadDocument}
         onPrint={handlePrintDocument}
+        onSearchToggle={handleSearchToggle}
       />
+      {searchOpen ? (
+        <div className="pdf-search-overlay" role="dialog" aria-label="Search document">
+          <form className="pdf-search-form" onSubmit={handleSearchSubmit}>
+            <input
+              ref={searchInputRef}
+              type="search"
+              placeholder="Find in document"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              disabled={!pdfDocument}
+            />
+            <span className="pdf-search-count">
+              {searchResults.length > 0
+                ? `${activeMatchIndex + 1} / ${searchResults.length}`
+                : '0 / 0'}
+            </span>
+            <div className="pdf-search-nav">
+              <button type="button" onClick={() => handleSelectMatch(-1)} disabled={searchResults.length === 0}>
+                ‹
+              </button>
+              <button type="button" onClick={() => handleSelectMatch(1)} disabled={searchResults.length === 0}>
+                ›
+              </button>
+            </div>
+            <button type="submit" disabled={!pdfDocument || isSearching}>
+              {isSearching ? '…' : 'Go'}
+            </button>
+            <button type="button" className="pdf-search-close" onClick={handleSearchClose}>
+              ×
+            </button>
+          </form>
+          {searchError ? <p className="pdf-search-error">{searchError}</p> : null}
+        </div>
+      ) : null}
       <Document file={SAMPLE_PDF_URL} onLoadSuccess={handleDocumentLoad}>
         <div className="pdf-layout">
           <aside className="pdf-thumbnails" aria-label="Page thumbnails">
@@ -342,9 +577,7 @@ export default function App() {
                 >
                   <Thumbnail
                     pageNumber={pageNumber}
-                    width={THUMBNAIL_WIDTH * zoom}
-                    renderTextLayer={false}
-                    renderAnnotationLayer={false}
+                    width={THUMBNAIL_WIDTH}
                     rotate={rotation}
                     onItemClick={({ pageNumber: targetPage }) => goToPage(targetPage)}
                   />
@@ -355,25 +588,31 @@ export default function App() {
           </aside>
 
           <section className="pdf-pages" aria-label="Document pages">
-            {Array.from({ length: numPages ?? 0 }, (_, index) => (
-              <div
-                className="pdf-page"
-                key={`page_${index + 1}`}
-                data-page={index + 1}
-                ref={(element) => {
-                  pageRefs.current[index] = element ?? null;
-                }}
-              >
-                <Page
-                  className="pdf-page-content"
-                  pageNumber={index + 1}
-                  width={BASE_PAGE_WIDTH * zoom}
-                  renderTextLayer={false}
-                  renderAnnotationLayer={false}
-                  rotate={rotation}
-                />
-              </div>
-            ))}
+            {Array.from({ length: numPages ?? 0 }, (_, index) => {
+              const pageNumber = index + 1;
+              const customTextRenderer = textRenderersByPage.get(pageNumber);
+
+              return (
+                <div
+                  className="pdf-page"
+                  key={`page_${pageNumber}`}
+                  data-page={pageNumber}
+                  ref={(element) => {
+                    pageRefs.current[index] = element ?? null;
+                  }}
+                >
+                  <Page
+                    className="pdf-page-content"
+                    pageNumber={pageNumber}
+                    width={BASE_PAGE_WIDTH * zoom}
+                    renderTextLayer={Boolean(customTextRenderer)}
+                    customTextRenderer={customTextRenderer}
+                    renderAnnotationLayer={false}
+                    rotate={rotation}
+                  />
+                </div>
+              );
+            })}
           </section>
         </div>
       </Document>

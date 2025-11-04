@@ -21,6 +21,7 @@ export default function Toolbar({
   onRotateReset,
   onDownload,
   onPrint,
+  onSearchToggle,
 }) {
   return (
     <div className="pdf-controls-container">
@@ -86,6 +87,12 @@ export default function Toolbar({
           <div className="pdf-controls-divider" aria-hidden="true" />
 
           <div className="pdf-controls-cluster" role="group" aria-label="Document actions">
+            <button type="button" onClick={onSearchToggle} aria-label="Search in document" disabled={!numPages}>
+              <span aria-hidden="true" className="pdf-icon">
+                🔍
+              </span>
+            </button>
+            <span className="pdf-controls-subdivider" aria-hidden="true" />
             <button type="button" onClick={onDownload} disabled={!numPages} aria-label="Download PDF">
               <span aria-hidden="true" className="pdf-icon">
                 ⬇

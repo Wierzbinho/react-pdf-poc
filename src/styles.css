@@ -151,6 +151,7 @@ body {
   box-sizing: border-box;
   margin-bottom: 1rem;
   scroll-margin-top: 80px;
+  position: relative;
 }
 
 .pdf-page:last-of-type {
@@ -169,6 +170,7 @@ body {
   height: auto !important;
   display: block;
 }
+
 .pdf-controls-cluster button.active-control {
   background: #3ddc84;
   color: #101014;
@@ -242,4 +244,91 @@ body {
   font-size: 0.75rem;
   text-align: center;
   color: #aebad6;
+}
+
+.pdf-search-overlay {
+  position: fixed;
+  top: 90px;
+  right: 40px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 12px 48px rgba(15, 23, 42, 0.45);
+  z-index: 10;
+  color: #f8fafc;
+  min-width: 320px;
+}
+
+.pdf-search-form {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.pdf-search-form input {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: #111827;
+  color: #f8fafc;
+}
+
+.pdf-search-form input:focus {
+  outline: none;
+  border-color: #3ddc84;
+}
+
+.pdf-search-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pdf-search-nav button,
+.pdf-search-form button {
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #111827;
+  color: #e2e8f0;
+  cursor: pointer;
+}
+
+.pdf-search-nav button:disabled,
+.pdf-search-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pdf-search-count {
+  font-size: 0.8rem;
+  color: #cbd5f5;
+}
+
+.pdf-search-close {
+  border-color: transparent;
+  background: transparent;
+  font-size: 1rem;
+  padding: 0 0.4rem;
+}
+
+.pdf-search-error {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: #f87171;
+}
+
+.pdf-highlight {
+  background: rgba(253, 224, 71, 0.45);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0;
+}
+
+.pdf-highlight--active {
+  background: rgba(250, 204, 21, 0.7);
+  color: inherit;
+  box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.9);
 }
