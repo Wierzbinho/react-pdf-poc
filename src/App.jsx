@@ -605,7 +605,7 @@ export default function App() {
                     className="pdf-page-content"
                     pageNumber={pageNumber}
                     width={BASE_PAGE_WIDTH * zoom}
-                    renderTextLayer={Boolean(customTextRenderer)}
+                    renderTextLayer
                     customTextRenderer={customTextRenderer}
                     renderAnnotationLayer={false}
                     rotate={rotation}
