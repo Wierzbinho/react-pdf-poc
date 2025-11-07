@@ -1,6 +1,10 @@
 import { Page } from 'react-pdf';
+import { useSearch } from '../context/SearchContext.jsx';
 
-export default function Pages({ numPages, zoom, rotation, pageRefs, basePageWidth, textRenderersByPage }) {
+const BASE_PAGE_WIDTH = 780;
+
+export default function Pages({ numPages, zoom, rotation, pageRefs }) {
+  const { textRenderersByPage } = useSearch();
   return (
     <section className="pdf-pages" aria-label="Document pages">
       {Array.from({ length: numPages ?? 0 }, (_, index) => {
@@ -21,7 +25,7 @@ export default function Pages({ numPages, zoom, rotation, pageRefs, basePageWidt
             <Page
               className="pdf-page-content"
               pageNumber={pageNumber}
-              width={basePageWidth * zoom}
+              width={BASE_PAGE_WIDTH * zoom}
               renderTextLayer
               customTextRenderer={customTextRenderer}
               renderAnnotationLayer={false}

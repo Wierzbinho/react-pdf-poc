@@ -28,8 +28,6 @@ export default function Toolbar({
   onRotateReset,
   onDownload,
   onPrint,
-  onSearchToggle,
-  searchOverlayProps,
 }) {
   return (
     <div className="pdf-controls-container">
@@ -70,7 +68,7 @@ export default function Toolbar({
 
           <div className="pdf-controls-divider" aria-hidden="true" />
 
-          <SearchTool numPages={numPages} onSearchToggle={onSearchToggle} overlayProps={searchOverlayProps} />
+          <SearchTool />
 
           <div className="pdf-controls-divider" aria-hidden="true" />
 

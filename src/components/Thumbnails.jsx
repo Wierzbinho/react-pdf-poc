@@ -1,6 +1,8 @@
 import { Thumbnail } from 'react-pdf';
 
-export default function Thumbnails({ numPages, currentPage, rotation, width, onSelectPage }) {
+const THUMBNAIL_WIDTH = 180;
+
+export default function Thumbnails({ numPages, currentPage, rotation, onSelectPage }) {
   return (
     <aside className="pdf-thumbnails" aria-label="Page thumbnails">
       {Array.from({ length: numPages ?? 0 }, (_, index) => {
@@ -15,7 +17,7 @@ export default function Thumbnails({ numPages, currentPage, rotation, width, onS
           >
             <Thumbnail
               pageNumber={pageNumber}
-              width={width}
+              width={THUMBNAIL_WIDTH}
               rotate={rotation}
               onItemClick={({ pageNumber: targetPage }) => onSelectPage(targetPage)}
             />
