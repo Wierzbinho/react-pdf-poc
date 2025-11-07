@@ -599,41 +599,22 @@ export default function App() {
         onDownload={handleDownloadDocument}
         onPrint={handlePrintDocument}
         onSearchToggle={handleSearchToggle}
+        searchOverlayProps={{
+          isOpen: searchOpen,
+          inputRef: searchInputRef,
+          query: searchQuery,
+          onQueryChange: (event) => setSearchQuery(event.target.value),
+          onSubmit: handleSearchSubmit,
+          onSelectPrevious: () => handleSelectMatch(-1),
+          onSelectNext: () => handleSelectMatch(1),
+          totalMatches: searchResults.length,
+          activeMatchIndex,
+          documentReady: Boolean(pdfDocument),
+          isSearching,
+          onClose: handleSearchClose,
+          errorMessage: searchError,
+        }}
       />
-      {searchOpen ? (
-        <div className="pdf-search-overlay" role="dialog" aria-label="Search document">
-          <form className="pdf-search-form" onSubmit={handleSearchSubmit}>
-            <input
-              ref={searchInputRef}
-              type="search"
-              placeholder="Find in document"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              disabled={!pdfDocument}
-            />
-            <span className="pdf-search-count">
-              {searchResults.length > 0
-                ? `${activeMatchIndex + 1} / ${searchResults.length}`
-                : '0 / 0'}
-            </span>
-            <div className="pdf-search-nav">
-              <button type="button" onClick={() => handleSelectMatch(-1)} disabled={searchResults.length === 0}>
-                ‹
-              </button>
-              <button type="button" onClick={() => handleSelectMatch(1)} disabled={searchResults.length === 0}>
-                ›
-              </button>
-            </div>
-            <button type="submit" disabled={!pdfDocument || isSearching}>
-              {isSearching ? '…' : 'Go'}
-            </button>
-            <button type="button" className="pdf-search-close" onClick={handleSearchClose}>
-              ×
-            </button>
-          </form>
-          {searchError ? <p className="pdf-search-error">{searchError}</p> : null}
-        </div>
-      ) : null}
       <Document file={SAMPLE_PDF_URL} onLoadSuccess={handleDocumentLoad}>
         <div className="pdf-layout">
           <aside className="pdf-thumbnails" aria-label="Page thumbnails">
