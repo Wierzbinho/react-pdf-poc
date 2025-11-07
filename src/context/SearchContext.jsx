@@ -1,12 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 const SearchContext = createContext(null);
 
@@ -32,7 +24,6 @@ export function SearchProvider({ children, pdfDocument, numPages, goToPage }) {
   const [activeMatchIndex, setActiveMatchIndex] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
-  const inputRef = useRef(null);
 
   const documentReady = Boolean(pdfDocument);
   const hasPages = Boolean(numPages);
@@ -227,7 +218,6 @@ export function SearchProvider({ children, pdfDocument, numPages, goToPage }) {
       activeMatchIndex,
       isSearching,
       errorMessage,
-      inputRef,
       documentReady: documentReady && hasPages,
       textRenderersByPage,
     }),
@@ -242,7 +232,6 @@ export function SearchProvider({ children, pdfDocument, numPages, goToPage }) {
       activeMatchIndex,
       isSearching,
       errorMessage,
-      inputRef,
       documentReady,
       hasPages,
       textRenderersByPage,

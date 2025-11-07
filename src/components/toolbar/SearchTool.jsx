@@ -9,7 +9,6 @@ export default function SearchTool() {
     toggleSearch,
     closeSearch,
     isOpen,
-    inputRef,
     query,
     handleQueryChange,
     submitSearch,
@@ -23,7 +22,6 @@ export default function SearchTool() {
 
   const overlayProps = {
     isOpen,
-    inputRef,
     query,
     onQueryChange: handleQueryChange,
     onSubmit: submitSearch,

@@ -1,8 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export default function SearchOverlay({
   isOpen,
-  inputRef,
   query,
   onQueryChange,
   onSubmit,
@@ -21,13 +20,18 @@ export default function SearchOverlay({
 
   const hasMatches = totalMatches > 0;
   const summaryLabel = hasMatches ? `${activeMatchIndex + 1} / ${totalMatches}` : '0 / 0';
+  const inputRef = useRef(null);
 
   useEffect(() => {
-    if (inputRef?.current) {
-      inputRef.current.focus();
-      inputRef.current.select?.();
+    if (!isOpen) {
+      return;
     }
-  }, [inputRef]);
+    const node = inputRef.current;
+    if (node) {
+      node.focus();
+      node.select?.();
+    }
+  }, [isOpen]);
 
   return (
     <div className="pdf-search-overlay" role="dialog" aria-label="Search document">
