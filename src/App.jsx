@@ -155,34 +155,106 @@ export default function App() {
       return;
     }
 
-    isPrintingRef.current = true;
+    const buildPrintableBlob = async () => {
+      if (pdfDocument) {
+        try {
+          const data = await pdfDocument.getData();
+          return new Blob([data], { type: 'application/pdf' });
+        } catch (error) {
+          console.warn('Falling back to network PDF fetch before printing.', error);
+        }
+      }
 
-    try {
       const response = await fetch(SAMPLE_PDF_URL, { mode: 'cors' });
       if (!response.ok) {
         throw new Error(`Failed to fetch PDF for printing: ${response.status}`);
       }
+      return response.blob();
+    };
 
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      const iframe = document.createElement('iframe');
+    isPrintingRef.current = true;
 
-      const cleanup = () => {
-        URL.revokeObjectURL(objectUrl);
+    let objectUrl;
+    let iframe;
+    let cleanupCalled = false;
+
+    const cleanup = () => {
+      if (cleanupCalled) {
+        return;
+      }
+      cleanupCalled = true;
+      if (iframe) {
         iframe.remove();
-        isPrintingRef.current = false;
-      };
+        iframe = null;
+      }
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+        objectUrl = null;
+      }
+      isPrintingRef.current = false;
+    };
 
+    try {
+      const blob = await buildPrintableBlob();
+      objectUrl = URL.createObjectURL(blob);
+
+      iframe = document.createElement('iframe');
       iframe.style.position = 'fixed';
-      iframe.style.width = '0';
-      iframe.style.height = '0';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '1px';
+      iframe.style.height = '1px';
       iframe.style.border = '0';
-      iframe.style.visibility = 'hidden';
+      iframe.style.opacity = '0';
+      iframe.setAttribute('aria-hidden', 'true');
 
       iframe.onload = () => {
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
-        requestAnimationFrame(cleanup);
+        const iframeWindow = iframe?.contentWindow;
+        if (!iframeWindow) {
+          cleanup();
+          return;
+        }
+
+        let waitingForUser = false;
+        let watchdogTimer;
+
+        const finalize = () => {
+          if (watchdogTimer) {
+            clearTimeout(watchdogTimer);
+            watchdogTimer = null;
+          }
+          iframeWindow.removeEventListener('afterprint', finalize);
+          window.removeEventListener('focus', handleWindowFocus);
+          cleanup();
+        };
+
+        const handleWindowFocus = () => {
+          if (!waitingForUser) {
+            return;
+          }
+          window.removeEventListener('focus', handleWindowFocus);
+          finalize();
+        };
+
+        iframeWindow.addEventListener('afterprint', finalize, { once: true });
+        window.addEventListener('focus', handleWindowFocus);
+
+        requestAnimationFrame(() => {
+          waitingForUser = true;
+          try {
+            iframeWindow.focus();
+            iframeWindow.print();
+            watchdogTimer = window.setTimeout(() => {
+              window.removeEventListener('focus', handleWindowFocus);
+              finalize();
+            }, 60000);
+          } catch (error) {
+            console.error('Unable to open print dialog.', error);
+            waitingForUser = false;
+            window.removeEventListener('focus', handleWindowFocus);
+            finalize();
+          }
+        });
       };
 
       iframe.onerror = () => {
@@ -194,7 +266,7 @@ export default function App() {
       document.body.appendChild(iframe);
     } catch (error) {
       console.error('Unable to print PDF:', error);
-      isPrintingRef.current = false;
+      cleanup();
     }
   };
 
