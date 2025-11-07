@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Document, Page, Thumbnail, pdfjs } from 'react-pdf';
+import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import Toolbar from './components/Toolbar.jsx';
+import Thumbnails from './components/Thumbnails.jsx';
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -617,28 +618,13 @@ export default function App() {
       />
       <Document file={SAMPLE_PDF_URL} onLoadSuccess={handleDocumentLoad}>
         <div className="pdf-layout">
-          <aside className="pdf-thumbnails" aria-label="Page thumbnails">
-            {Array.from({ length: numPages ?? 0 }, (_, index) => {
-              const pageNumber = index + 1;
-              const isActive = currentPage === pageNumber;
-
-              return (
-                <div
-                  key={`thumb_${pageNumber}`}
-                  className={`pdf-thumbnail${isActive ? ' pdf-thumbnail--active' : ''}`}
-                  aria-current={isActive ? 'page' : undefined}
-                >
-                  <Thumbnail
-                    pageNumber={pageNumber}
-                    width={THUMBNAIL_WIDTH}
-                    rotate={rotation}
-                    onItemClick={({ pageNumber: targetPage }) => goToPage(targetPage)}
-                  />
-                  <span className="pdf-thumbnail__label">Page {pageNumber}</span>
-                </div>
-              );
-            })}
-          </aside>
+          <Thumbnails
+            numPages={numPages}
+            currentPage={currentPage}
+            rotation={rotation}
+            width={THUMBNAIL_WIDTH}
+            onSelectPage={(pageNumber) => goToPage(pageNumber)}
+          />
 
           <section className="pdf-pages" aria-label="Document pages">
             {Array.from({ length: numPages ?? 0 }, (_, index) => {
