@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+
 export default function SearchOverlay({
   isOpen,
   inputRef,
@@ -19,6 +21,13 @@ export default function SearchOverlay({
 
   const hasMatches = totalMatches > 0;
   const summaryLabel = hasMatches ? `${activeMatchIndex + 1} / ${totalMatches}` : '0 / 0';
+
+  useEffect(() => {
+    if (inputRef?.current) {
+      inputRef.current.focus();
+      inputRef.current.select?.();
+    }
+  }, [inputRef]);
 
   return (
     <div className="pdf-search-overlay" role="dialog" aria-label="Search document">

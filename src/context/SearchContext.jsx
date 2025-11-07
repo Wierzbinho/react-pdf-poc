@@ -51,12 +51,6 @@ export function SearchProvider({ children, pdfDocument, numPages, goToPage }) {
   }, [query, resetSearchState]);
 
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
     if (results.length > 0) {
       const index = Math.min(activeMatchIndex, results.length - 1);
       const target = results[index];
