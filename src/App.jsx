@@ -1,5 +1,11 @@
-import ViewerV1 from './components/ViewerV1.jsx';
+import ViewerV2 from './components/ViewerV2.jsx';
 
 export default function App() {
-  return <ViewerV1 />;
+  return (
+    <main>
+      <section className='pdf-viewer-main'>
+        <ViewerV2 />
+      </section>
+    </main>
+  );
 }

@@ -5,16 +5,11 @@ body {
   color: #f8fafc;
 }
 
-.pdf-viewer {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  padding: 0 0 2rem;
-  gap: 1.5rem;
-  width: 100%;
+.pdf-viewer-main {
+  padding: 1rem;
 }
 
-.pdf-viewer .react-pdf__Document {
+.react-pdf__Document {
   display: flex;
   flex-direction: column;
   align-items: center;
