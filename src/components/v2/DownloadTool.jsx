@@ -1,12 +1,13 @@
 import { useRef } from 'react';
+import { useDocument } from '../../context/DocumentContext.jsx';
+import { SAMPLE_PDF_URL } from '../../constants/pdf.js';
 
-const SAMPLE_PDF_URL = 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf';
-
-export default function DownloadTool({ disabled }) {
+export default function DownloadTool() {
+  const { numPages } = useDocument();
   const isDownloadingRef = useRef(false);
 
   const handleClick = async () => {
-    if (disabled || isDownloadingRef.current) {
+    if (!numPages || isDownloadingRef.current) {
       return;
     }
 
@@ -43,7 +44,7 @@ export default function DownloadTool({ disabled }) {
   };
 
   return (
-    <button type="button" onClick={handleClick} disabled={disabled}>
+    <button type="button" onClick={handleClick} disabled={!numPages}>
       Download
     </button>
   );

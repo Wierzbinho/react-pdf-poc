@@ -1,9 +1,9 @@
 import DownloadTool from './DownloadTool.jsx';
 
-export default function Toolbar({ downloadDisabled }) {
+export default function Toolbar() {
   return (
     <div className="viewer-v2-toolbar">
-      <DownloadTool disabled={downloadDisabled} />
+      <DownloadTool />
     </div>
   );
 }

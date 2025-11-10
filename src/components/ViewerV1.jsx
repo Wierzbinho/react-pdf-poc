@@ -7,11 +7,9 @@ import Toolbar from './Toolbar.jsx';
 import Thumbnails from './Thumbnails.jsx';
 import Pages from './Pages.jsx';
 import { SearchProvider } from '../context/SearchContext.jsx';
+import { SAMPLE_PDF_URL } from '../constants/pdf.js';
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
-
-const SAMPLE_PDF_URL =
-  'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf';
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 2.5;
 const ZOOM_STEP = 0.25;
