@@ -4,7 +4,7 @@ export default function App() {
   return (
     <main>
       <section className="viewer-v2-shell">
-        <ViewerV2 />
+        <ViewerV1 />
       </section>
     </main>
   );
